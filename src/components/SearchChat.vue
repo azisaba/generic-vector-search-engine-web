@@ -17,46 +17,29 @@
             v-model="query"
             @click:append-inner="page = 1; search()"
             @keydown.enter="page = 1; search()"
+        ></v-text-field>
+        <v-infinite-scroll
+            v-if="searching || matches.length > 0"
+            :height="600"
+            :items="matches"
+            :onLoad="searchMore"
         >
-          <v-progress-linear
-              :active="searching"
-              :indeterminate="true"
-              :absolute="true"
-              color="blue"
-          ></v-progress-linear>
-        </v-text-field>
-        <chevron-left-right
-            :left-disabled="searching || page <= 1"
-            :right-disabled="searching || matches.length < 10 || page >= 30"
-            @left="page--; search()"
-            @right="page++; search()"
-        />
-        <div
-            class="match"
-            v-for="(match, index) in (searching ? Array.from<Match>({ length: 10 }) : matches)"
-            :key="index"
-        >
-          <v-skeleton-loader
-              v-if="searching"
-              type="article"
-          ></v-skeleton-loader>
-          <v-card
-              v-else
-              :title="match.pageContent.split('\n')[0] + ' ' + (match.pageContent.split('\n')[1] || '')"
-              :subtitle="'スコア: ' + (match.score * 100).toFixed(2) + '% | ' + new Date(match.metadata['timestamp']).toLocaleString('ja')"
-              @click="overlayIndex = index"
+          <div
+              class="match"
+              v-for="(match, index) in matches"
+              :key="index"
           >
-            <template v-slot:text>
-              <pre>{{ summarize(match.pageContent) }}</pre>
-            </template>
-          </v-card>
-        </div>
-        <chevron-left-right
-            :left-disabled="searching || page <= 1"
-            :right-disabled="searching || matches.length < 10"
-            @left="page--; search()"
-            @right="page++; search()"
-        />
+            <v-card
+                :title="match.pageContent.split('\n')[0] + ' ' + (match.pageContent.split('\n')[1] || '')"
+                :subtitle="'スコア: ' + (match.score * 100).toFixed(2) + '% | ' + new Date(match.metadata['timestamp']).toLocaleString('ja')"
+                @click="overlayIndex = index"
+            >
+              <template v-slot:text>
+                <pre>{{ summarize(match.pageContent) }}</pre>
+              </template>
+            </v-card>
+          </div>
+        </v-infinite-scroll>
       </v-responsive>
     </v-container>
     <v-overlay
@@ -88,7 +71,6 @@
 
 <script setup lang="ts">
 import {ref} from "vue";
-import ChevronLeftRight from "@/components/ChevronLeftRight.vue";
 import {Match, fetchMatches} from "@/util.ts";
 
 const endpoint = ref('')
@@ -98,8 +80,6 @@ const page = ref(1)
 const matches = ref(new Array<Match>())
 const overlayIndex = ref(-1)
 const hideEndpoint = ref(false)
-
-let updateIndex = 0
 
 const summarize = (text: string) => {
   const lines = text.split('\n')
@@ -113,15 +93,24 @@ const summarize = (text: string) => {
 const search = async () => {
   if (!query.value) return
   if (!endpoint.value) return
-  const currentIndex = ++updateIndex
   searching.value = true
+  matches.value = []
+}
+
+const searchMore = async ({ done }: { done: (status: 'error' | 'loading' | 'empty' | 'ok') => void }) => {
+  page.value++
   try {
-    matches.value = []
     const embeddings = await fetchMatches(endpoint.value, query.value, 10, (page.value - 1) * 10)
-    matches.value = embeddings.results
-    console.log(embeddings)
-  } finally {
-    if (currentIndex === updateIndex) searching.value = false
+    if (embeddings.results.length === 0) {
+      return done('empty')
+    }
+    matches.value.push(...embeddings.results)
+    matches.value.sort((a, b) => b.score - a.score)
+    console.log(matches.value.length)
+    done('ok')
+  } catch (e) {
+    console.error(e)
+    done('error')
   }
 }
 </script>
