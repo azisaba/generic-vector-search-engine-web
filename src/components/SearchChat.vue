@@ -4,14 +4,6 @@
       <v-responsive class="fill-height">
         <slot name="mode-selector" />
         <v-text-field
-            label="APIエンドポイント"
-            prepend-icon="mdi-code-tags"
-            v-model="endpoint"
-            :type="hideEndpoint ? 'password' : 'text'"
-            :append-inner-icon="hideEndpoint ? 'mdi-eye' : 'mdi-eye-off'"
-            @click:append-inner="hideEndpoint = !hideEndpoint"
-        ></v-text-field>
-        <v-text-field
             label="検索クエリ"
             append-inner-icon="mdi-magnify"
             v-model="query"
@@ -25,6 +17,12 @@
               color="blue"
           ></v-progress-linear>
         </v-text-field>
+        <v-select
+            label="ソース"
+            v-model="endpoint"
+            :items="endpoints"
+            :multiple="true"
+        ></v-select>
         <chevron-left-right
             :left-disabled="searching || page <= 1"
             :right-disabled="searching || matches.length < 10 || page >= 30"
@@ -91,13 +89,15 @@ import {ref} from "vue";
 import ChevronLeftRight from "@/components/ChevronLeftRight.vue";
 import {Match, fetchMatches} from "@/util.ts";
 
-const endpoint = ref('')
+const endpoints = [
+  {title: 'Lifeパッチノート', value: 'https://vectorsearch--life-patch-notes-search.azisaba.net/query'},
+]
+const endpoint = ref([endpoints[0].value])
 const query = ref('')
 const searching = ref(false)
 const page = ref(1)
 const matches = ref(new Array<Match>())
 const overlayIndex = ref(-1)
-const hideEndpoint = ref(false)
 
 let updateIndex = 0
 
@@ -112,14 +112,19 @@ const summarize = (text: string) => {
 
 const search = async () => {
   if (!query.value) return
-  if (!endpoint.value) return
+  if (!endpoint.value.length) return
   const currentIndex = ++updateIndex
   searching.value = true
   try {
     matches.value = []
-    const embeddings = await fetchMatches(endpoint.value, query.value, 10, (page.value - 1) * 10)
-    matches.value = embeddings.results
-    console.log(embeddings)
+    const combined = new Array<Match>()
+    for (const url of endpoint.value) {
+      const embeddings = await fetchMatches(url, query.value, 10, (page.value - 1) * 10)
+      combined.push(...embeddings.results)
+    }
+    combined.sort((a, b) => b.score - a.score)
+    matches.value = combined.splice(0, 10)
+    console.log(combined)
   } finally {
     if (currentIndex === updateIndex) searching.value = false
   }
