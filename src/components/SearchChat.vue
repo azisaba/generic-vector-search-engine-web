@@ -15,8 +15,8 @@
             label="検索クエリ"
             append-inner-icon="mdi-magnify"
             v-model="query"
-            @click:append-inner="page = 1; search()"
-            @keydown.enter="page = 1; search()"
+            @click:append-inner="page = 0; search()"
+            @keydown.enter="page = 0; search()"
         ></v-text-field>
         <v-infinite-scroll
             v-if="searching || matches.length > 0"
@@ -76,7 +76,7 @@ import {Match, fetchMatches} from "@/util.ts";
 const endpoint = ref('')
 const query = ref('')
 const searching = ref(false)
-const page = ref(1)
+const page = ref(0)
 const matches = ref(new Array<Match>())
 const overlayIndex = ref(-1)
 const hideEndpoint = ref(false)
