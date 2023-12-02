@@ -94,10 +94,8 @@ import {Match, fetchMatches} from "@/util.ts";
 const endpoint = ref('')
 const query = ref('')
 const searching = ref(false)
-//const generating = ref(false)
 const page = ref(1)
 const matches = ref(new Array<Match>())
-//const summary = ref('')
 const overlayIndex = ref(-1)
 const hideEndpoint = ref(false)
 
@@ -126,21 +124,6 @@ const search = async () => {
     if (currentIndex === updateIndex) searching.value = false
   }
 }
-
-/*
-const generate = async () => {
-  generating.value = true
-  try {
-    let text = ''
-    for (const match of matches.value) {
-      text += `\n\nFile: \`${match.metadata['id']}\`\nContext data:\n\n\n\`\`\`\n${match.metadata['text']}\n\`\`\`\n`
-    }
-    summary.value = await summarizeAsync(text, '入力された内容を最大300文字程度に要約してユーザーに伝えてください。', 500)
-  } finally {
-    generating.value = false
-  }
-}
-*/
 </script>
 
 <style scoped>
