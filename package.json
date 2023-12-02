@@ -1,0 +1,24 @@
+{
+  "name": "generic-vector-search-engine-web",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@mdi/font": "^7.3.67",
+    "vue": "^3.3.8",
+    "vuetify": "^3.4.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.1",
+    "@vitejs/plugin-vue": "^4.5.0",
+    "typescript": "^5.2.2",
+    "vite": "^4.5.0",
+    "vite-plugin-vuetify": "^1.0.2",
+    "vue-tsc": "^1.8.22"
+  }
+}
