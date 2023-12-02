@@ -1,6 +1,8 @@
-# Vue 3 + TypeScript + Vite
+# generic-vector-search-engine-web
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+Actually, this thing is intended for usage with [discord-channel-loader](https://github.com/acrylic-style/discord-channel-loader).
+
+You should work this project to make it work with your own generic-vector-search.
 
 ## Recommended IDE Setup
 
