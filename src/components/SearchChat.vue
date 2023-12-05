@@ -16,6 +16,39 @@
             @click:append-inner="page = 0; search()"
             @keydown.enter="page = 0; search()"
         ></v-text-field>
+        <v-expansion-panels>
+          <v-expansion-panel title="日時でフィルター">
+            <v-expansion-panel-text>
+              <div style="display: flex; flex-direction: row;">
+                <v-date-picker
+                    v-model="filterBefore"
+                    title="検索範囲(～の前)"
+                ></v-date-picker>
+                <v-date-picker
+                    v-model="filterAfter"
+                    title="検索範囲(～の後)"
+                ></v-date-picker>
+              </div>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+          <v-expansion-panel title="作成者でフィルター">
+            <v-expansion-panel-text>
+              <v-text-field
+                  v-model="filterAuthorName"
+                  label="作成者ユーザー名"
+                  :clearable="true"
+              ></v-text-field>
+            </v-expansion-panel-text>
+            <v-expansion-panel-text>
+              <v-text-field
+                  v-model="filterAuthorId"
+                  label="作成者ユーザーID"
+                  :clearable="true"
+              ></v-text-field>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
+        <v-btn color="green" @click="filterBefore = null; filterAfter = null;">検索条件をクリア</v-btn>
         <v-infinite-scroll
             v-if="searching || matches.length > 0"
             :height="600"
@@ -70,7 +103,9 @@
 <script setup lang="ts">
 import {ref} from "vue";
 import {Match, fetchMatches} from "@/util.ts";
+import {useDate} from "vuetify";
 
+const date = useDate()
 const endpoints = [
   {title: 'Lifeパッチノート', value: 'https://vectorsearch--life-patch-notes-search.azisaba.net/query'},
 ]
@@ -80,6 +115,10 @@ const searching = ref(false)
 const page = ref(0)
 const matches = ref(new Array<Match>())
 const overlayIndex = ref(-1)
+const filterBefore = ref<string | null>(null)
+const filterAfter = ref<string | null>(null)
+const filterAuthorName = ref('')
+const filterAuthorId = ref('')
 
 const summarize = (text: string) => {
   const lines = text.split('\n')
@@ -99,11 +138,24 @@ const search = async () => {
 
 const searchMore = async ({ done }: { done: (status: 'error' | 'loading' | 'empty' | 'ok') => void }) => {
   page.value++
-  console.log(page.value)
+  console.log('page', page.value)
   try {
     const combined = new Array<Match>()
     for (const url of endpoint.value) {
-      const embeddings = await fetchMatches(url, query.value, 10, (page.value - 1) * 10)
+      const filters = new Array<string>()
+      if (filterBefore.value) {
+        filters.push(`timestamp < ${(date.date(filterBefore.value) as Date).getTime()}`)
+      }
+      if (filterAfter.value) {
+        filters.push(`timestamp > ${(date.date(filterAfter.value) as Date).getTime()}`)
+      }
+      if (filterAuthorName.value) {
+        filters.push(`author_name == "${filterAuthorName.value}"`)
+      }
+      if (filterAuthorId.value) {
+        filters.push(`author_id == "${filterAuthorId.value}"`)
+      }
+      const embeddings = await fetchMatches(url, query.value, 10, (page.value - 1) * 10, filters.join(' && '))
       if (embeddings.results.length === 0) {
         return done('empty')
       }
@@ -114,7 +166,6 @@ const searchMore = async ({ done }: { done: (status: 'error' | 'loading' | 'empt
     }
     matches.value.push(...combined)
     matches.value.sort((a, b) => b.score - a.score)
-    console.log(matches.value.length)
     done('ok')
   } catch (e) {
     console.error(e)
