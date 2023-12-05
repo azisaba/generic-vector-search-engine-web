@@ -48,7 +48,7 @@
             </v-expansion-panel-text>
           </v-expansion-panel>
         </v-expansion-panels>
-        <v-btn color="green" @click="filterBefore = null; filterAfter = null;">検索条件をクリア</v-btn>
+        <v-btn color="green" @click="filterBefore = null; filterAfter = null; filterAuthorName = ''; filterAuthorId = '';">検索条件をクリア</v-btn>
         <v-infinite-scroll
             v-if="searching || matches.length > 0"
             :height="600"
